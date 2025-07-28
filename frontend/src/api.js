@@ -154,6 +154,24 @@ export const api = {
     return true
   },
 
+  resetUserPassword: async (id, password) => {
+    const res = await fetchWithAuth(`/auth/users/${id}/reset_password/`, {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    })
+    if (!res.ok) throw await res.json()
+    return res.json()
+  },
+
+  createUser: async (payload) => {
+    const res = await fetchWithAuth('/auth/users/create/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) throw await res.json()
+    return res.json()
+  },
+
   importDicom: async (formData) => {
     const res = await fetchWithAuth("/dicom/import/", {
       method: "POST",

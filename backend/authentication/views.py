@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer
 from rest_framework import generics, permissions, views
-from typing import Dict, Any, cast
+from typing import Any, Dict, cast
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
@@ -119,9 +119,9 @@ class RegisterView(views.APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
-            username = data.get("username")
-            email    = data.get("email", "")
+            data = cast(Dict[str, Any], serializer.validated_data)
+            username = data.get('username', '')
+            email    = data.get('email', '')
 
             user = User(username=username, email=email)
             user.set_password(request.data.get("password"))
@@ -150,14 +150,41 @@ class UserListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
 
 
-class CurrentUserView(views.APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
-
 class UserDetailView(generics.DestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAdminUser]
+
+
+class UserPasswordResetView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk: int):
+        new_password = request.data.get('password')
+        if not new_password:
+            return Response({'error': 'Password is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(pk=pk)
+            user.set_password(new_password)
+            user.save()
+            return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:  # type: ignore[attr-defined]
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AdminCreateUserView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email','')
+        password = request.data.get('password')
+        is_admin = bool(request.data.get('is_admin'))
+        if not username or not password:
+            return Response({'error':'username and password required'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({'error':'username taken'}, status=status.HTTP_400_BAD_REQUEST)
+        user = User(username=username, email=email, is_staff=is_admin, is_superuser=is_admin)
+        user.set_password(password)
+        user.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)

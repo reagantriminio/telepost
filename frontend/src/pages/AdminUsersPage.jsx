@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import { Link } from 'react-router-dom'
 
 function AdminUsersPage() {
   const [users, setUsers] = useState([])
@@ -22,7 +23,30 @@ function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Registered Users</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Registered Users</h1>
+        <div className="flex items-center space-x-2">
+          <Link to="/admin/destinations" className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-md transition-colors">Destinations</Link>
+          <Link to="/admin/logs" className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-md transition-colors">Logs</Link>
+          <Link to="/admin/users" className="px-3 py-2 bg-gray-600 text-white text-xs rounded-md">Users</Link>
+          <Link to="/dashboard" className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-md transition-colors">Dashboard</Link>
+          <button
+            onClick={async ()=>{
+              const username=prompt('Username');
+              if(!username) return;
+              const email=prompt('Email(optional)','');
+              const password=prompt('Password');
+              if(!password) return;
+              const isAdmin=confirm('Make this user an admin?');
+              try{
+                const newUser=await api.createUser({username,email,password,is_admin:isAdmin});
+                setUsers(prev=>[...prev,newUser]);
+                alert('User created');
+              }catch(e){alert('Failed: '+(e?.error||'error'))}
+            }}
+            className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md">Add User</button>
+        </div>
+      </div>
       {loading ? (
         <p>Loading...</p>
       ) : (
@@ -55,6 +79,20 @@ function AdminUsersPage() {
                   >
                     Delete
                   </button>
+                  <button
+                    onClick={async () => {
+                      const pwd = prompt('Enter new password for '+u.username)
+                      if (pwd) {
+                        try {
+                          await api.resetUserPassword(u.id, pwd)
+                          alert('Password reset')
+                        } catch (e) {
+                          alert('Failed to reset')
+                        }
+                      }
+                    }}
+                    className="text-blue-400 hover:underline text-xs"
+                  >Reset</button>
                 </td>
               </tr>
             ))}

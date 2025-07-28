@@ -6,8 +6,10 @@ from .views import (
     RegisterView,
     LogoutView,
     UserListView,
-    CurrentUserView,
     UserDetailView,
+    current_user_view,
+    UserPasswordResetView,
+    AdminCreateUserView,
 )
 
 
@@ -18,5 +20,7 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='auth_register'),
     path('users/', UserListView.as_view(), name='user_list'),  # admin only
     path('users/<int:pk>/', UserDetailView.as_view(), name='user_detail'),  # delete
-    path('user/', CurrentUserView.as_view(), name='current_user'),
+    path('users/<int:pk>/reset_password/', UserPasswordResetView.as_view(), name='user_reset_password'),
+    path('users/create/', AdminCreateUserView.as_view(), name='admin_create_user'),
+    path('user/', current_user_view, name='current_user'),
 ] 
