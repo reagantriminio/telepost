@@ -7,6 +7,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer
+from rest_framework import generics, permissions, views
+from typing import Dict, Any, cast
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
@@ -104,3 +106,58 @@ def update_user_view(request):
         serializer.errors, 
         status=status.HTTP_400_BAD_REQUEST
     )
+
+
+# ------------------------------
+# Admin / registration endpoints
+# ------------------------------
+
+
+class RegisterView(views.APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+            username = data.get("username")
+            email    = data.get("email", "")
+
+            user = User(username=username, email=email)
+            user.set_password(request.data.get("password"))
+            user.save()
+            return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.data.get('refresh')
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                pass
+        return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
+
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all().order_by('username')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class CurrentUserView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+class UserDetailView(generics.DestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]

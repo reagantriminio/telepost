@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'dicom_transfer.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
     import dj_database_url  # type: ignore
-DATABASES = {
+    DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
 else:
@@ -94,8 +94,8 @@ else:
             'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

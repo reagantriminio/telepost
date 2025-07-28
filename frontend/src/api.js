@@ -77,6 +77,16 @@ export const api = {
     return data;
   },
 
+  register: async (payload) => {
+    const res = await fetch(`${BASE_URL}/auth/register/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw await res.json();
+    return res.json();
+  },
+
   logout: async () => {
     if (!refreshToken) return;
     await fetchWithAuth("/auth/logout/", {
@@ -129,6 +139,19 @@ export const api = {
     const res = await fetchWithAuth(`/audit/logs/${query ? '?' + query : ''}`);
     if (!res.ok) throw await res.json();
     return res.json();
+  },
+
+  getUsers: async () => {
+    const res = await fetchWithAuth('/auth/users/');
+    if (!res.ok) throw await res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.results || [];
+  },
+
+  deleteUser: async (id) => {
+    const res = await fetchWithAuth(`/auth/users/${id}/`, { method: 'DELETE' })
+    if (!res.ok && res.status !== 204) throw await res.json()
+    return true
   },
 
   importDicom: async (formData) => {

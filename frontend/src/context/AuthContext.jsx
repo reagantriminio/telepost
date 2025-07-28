@@ -31,6 +31,13 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     const data = await api.login(username, password)
     setUser(data.user)
+    return data // pass back to caller
+  }
+
+  const register = async (payload) => {
+    await api.register(payload)
+    // automatically log in after successful registration
+    return login(payload.username, payload.password)
   }
 
   const logout = async () => {
@@ -45,7 +52,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   )

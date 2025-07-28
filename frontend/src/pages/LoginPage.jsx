@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { Link } from 'react-router-dom'
 
 function LoginPage() {
   const { login } = useAuth()
@@ -48,7 +49,7 @@ function LoginPage() {
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">DICOM Transfer</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Mimic Dicom Router</h1>
           <p className="text-gray-400">v2.1.0</p>
         </div>
 
@@ -108,13 +109,8 @@ function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <p className="text-xs text-gray-400 text-center">
-              Demo: Use any username/password to login
-              <br />
-              Use "admin" as username for admin privileges
-            </p>
+          <div className="mt-6 text-center text-sm text-gray-400">
+            Don't have an account? <Link to="/signup" className="text-blue-400 hover:underline">Sign up</Link>
           </div>
         </div>
       </div>

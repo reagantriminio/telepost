@@ -137,7 +137,7 @@ function DashboardPage({ user, onLogout }) {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold">DICOM Transfer</h1>
+            <h1 className="text-xl font-bold">Mimic Dicom Router</h1>
             <span className="text-sm text-gray-400">v2.1.0</span>
           </div>
           <div className="flex items-center space-x-4">
@@ -162,6 +162,12 @@ function DashboardPage({ user, onLogout }) {
                   className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-md transition-colors"
                 >
                   Logs
+                </Link>
+                <Link
+                  to="/admin/users"
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-md transition-colors"
+                >
+                  Users
                 </Link>
               </>
             )}

@@ -40,6 +40,7 @@ function AuditLogsPage() {
               <th className="py-2 px-3 text-left">Timestamp</th>
               <th className="py-2 px-3 text-left">Action</th>
               <th className="py-2 px-3 text-left">Status</th>
+              <th className="py-2 px-3 text-left">Destination</th>
               <th className="py-2 px-3 text-left">Patient/Series</th>
               <th className="py-2 px-3 text-left">Message</th>
             </tr>
@@ -50,6 +51,7 @@ function AuditLogsPage() {
                 <td className="py-2 px-3">{new Date(l.timestamp).toLocaleString()}</td>
                 <td className="py-2 px-3">{l.action}</td>
                 <td className="py-2 px-3">{l.status}</td>
+                <td className="py-2 px-3">{l.destination_name}</td>
                 <td className="py-2 px-3">{l.patient_name || l.series_description}</td>
                 <td className="py-2 px-3 text-xs max-w-xs truncate" title={l.error_message}>{l.error_message}</td>
               </tr>
