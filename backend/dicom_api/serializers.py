@@ -19,7 +19,7 @@ class TransferLogSerializer(serializers.ModelSerializer):
             'timestamp', 'completed_at', 'status', 'status_display',
             'patient_name', 'patient_id', 'study_instance_uid', 
             'series_instance_uid', 'series_description', 'modality',
-            'instance_count', 'destination', 'destination_name',
+            'instance_count', 'bytes_transferred', 'destination', 'destination_name',
             'error_message', 'details', 'duration'
         ]
         read_only_fields = ['id', 'timestamp', 'user']
@@ -45,7 +45,7 @@ class TransferLogListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'action_display', 'timestamp', 
             'status', 'status_display', 'patient_name', 
-            'series_description', 'destination_name', 'error_message'
+            'series_description', 'bytes_transferred', 'destination_name', 'error_message'
         ]
 
 class DICOMImportResponseSerializer(serializers.Serializer):

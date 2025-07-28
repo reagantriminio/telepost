@@ -210,11 +210,15 @@ class DICOMTransferService:
                 timeout=300  # 5 minute timeout
             )
             
+            total_size = sum(os.path.getsize(fp) for fp in valid_files if os.path.exists(fp))
+
             if result.returncode == 0:
                 # Success
+                transfer_log.bytes_transferred = total_size
                 transfer_log.mark_completed(
                     'success',
                     files_transferred=len(valid_files),
+                    bytes_transferred=total_size,
                     storescu_output=result.stdout
                 )
                 logger.info(f"Transfer completed successfully: {len(valid_files)} files")

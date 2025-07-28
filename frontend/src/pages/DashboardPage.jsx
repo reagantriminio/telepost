@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import TransferVolumeChart from '../components/TransferVolumeChart'
 import { Link } from 'react-router-dom'
 import DICOMImport from '../components/DICOMImport'
 import PatientList from '../components/PatientList'
@@ -8,6 +9,7 @@ function DashboardPage({ user, onLogout }) {
   const [patients, setPatients] = useState([])
   const [destinations, setDestinations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [logs, setLogs] = useState([])
 
   // Fetch destinations from backend
   useEffect(() => {
@@ -28,6 +30,23 @@ function DashboardPage({ user, onLogout }) {
     return () => {
       isMounted = false
     }
+  }, [])
+
+  // fetch audit logs for volume chart
+  useEffect(() => {
+    let mounted = true
+    async function fetchLogs() {
+      try {
+        const data = await api.getAuditLogs({ action: 'send', status: 'success', page_size: 100 })
+        const list = data.results || data
+        if (mounted) setLogs(list)
+      } catch (e) {
+        console.error('fetch logs', e)
+      }
+    }
+    fetchLogs()
+    const iv = setInterval(fetchLogs, 60000) // refresh every minute
+    return () => { mounted = false; clearInterval(iv) }
   }, [])
 
   const handleFilesImported = (importedPatients) => {
@@ -159,6 +178,9 @@ function DashboardPage({ user, onLogout }) {
       {/* Main Content */}
       <main className="p-6">
         <div className="max-w-7xl mx-auto space-y-6">
+          {/* Stats Section */}
+          {logs.length > 0 && <TransferVolumeChart logs={logs} />}
+
           {/* Import Section */}
           <DICOMImport onFilesImported={handleFilesImported} />
 

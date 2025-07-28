@@ -87,6 +87,12 @@ class TransferLog(models.Model):
         help_text="Number of DICOM instances in the series"
     )
 
+    bytes_transferred = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="Total bytes sent for this transfer (successful sends)"
+    )
+
     # Explicit manager annotation for static type checkers (e.g., mypy)
     objects: models.Manager = models.Manager()
     
