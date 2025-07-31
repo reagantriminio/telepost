@@ -23,16 +23,22 @@ function AuditLogsPage() {
   useEffect(() => { fetchLogs(1) }, [])
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6 space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Audit Logs</h1>
-        <Link
-          to="/dashboard"
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-md transition-colors"
-        >
-          Back to Dashboard
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Header */}
+      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">Mimic Dicom Router – Admin</h1>
+          <nav className="flex items-center space-x-2 text-sm">
+            <Link to="/admin/destinations" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors">Destinations</Link>
+            <Link to="/admin/logs" className="px-4 py-2 bg-blue-600 rounded-md">Logs</Link>
+            <Link to="/admin/users" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors">Users</Link>
+            <Link to="/dashboard" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors">Dashboard</Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="p-6 space-y-6">
       {loading ? <p>Loading...</p> : (
         <table className="w-full text-sm bg-gray-800 border border-gray-700 rounded-lg">
           <thead className="bg-gray-700">
@@ -62,6 +68,7 @@ function AuditLogsPage() {
           </tbody>
         </table>
       )}
+      </main>
     </div>
   )
 }
