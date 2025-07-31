@@ -106,6 +106,11 @@ STORESCU_PATH=storescu
 # CORS settings
 CORS_ALLOWED_ORIGINS=http://10.200.20.37
 CORS_ALLOW_CREDENTIALS=True
+
+# Session settings
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+CSRF_TRUSTED_ORIGINS=http://10.200.20.37
 EOF
 
 # Run migrations
@@ -169,6 +174,9 @@ cat > /etc/nginx/sites-available/telepost << EOF
 server {
     listen 80;
     server_name 10.200.20.37;
+    
+    # Global upload limits
+    client_max_body_size 8G;
 
     # Frontend
     location / {
@@ -183,6 +191,14 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # Increase upload limits for DICOM files
+        client_max_body_size 8G;
+        proxy_connect_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_read_timeout 600s;
+        proxy_buffering off;
+        proxy_request_buffering off;
     }
 
     # Static files
