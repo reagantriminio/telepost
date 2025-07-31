@@ -47,19 +47,19 @@ apt install -y nodejs
 
 # Install DCMTK for DICOM operations
 print_status "Installing DCMTK..."
-apt install -y dcmtk libjpeg62-turbo
+apt install -y dcmtk libjpeg-turbo8
 
 # Create application directory
 print_status "Creating application directory..."
-mkdir -p /home/administrator/desktop/telepost
-cd /home/administrator/desktop/telepost
+mkdir -p /home/administrator/desktop/mimic/telepost
+cd /home/administrator/desktop/mimic/telepost
 
 # Clone the repository (replace with your actual repo URL)
 print_status "Cloning repository..."
 if [ ! -d ".git" ]; then
     # If you have the code locally, you can copy it instead:
-    # cp -r /path/to/your/local/telepost/* /home/administrator/desktop/telepost/
-    print_warning "Please copy your telepost code to /home/administrator/desktop/telepost/ manually"
+    # cp -r /path/to/your/local/telepost/* /home/administrator/desktop/mimic/telepost/
+    print_warning "Please copy your telepost code to /home/administrator/desktop/mimic/telepost/ manually"
     print_warning "Or uncomment and modify the git clone command below"
     # git clone https://github.com/yourusername/telepost.git .
 fi
@@ -76,7 +76,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE dicom_transfer TO pos
 
 # Backend setup
 print_status "Setting up Django backend..."
-cd /home/administrator/desktop/telepost/backend
+cd /home/administrator/desktop/mimic/telepost/backend
 
 # Create virtual environment
 python3 -m venv venv
@@ -141,9 +141,9 @@ After=network.target postgresql.service
 Type=exec
 User=www-data
 Group=www-data
-WorkingDirectory=/home/administrator/desktop/telepost/backend
-Environment=PATH=/home/administrator/desktop/telepost/backend/venv/bin
-ExecStart=/home/administrator/desktop/telepost/backend/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 dicom_transfer.wsgi:application
+WorkingDirectory=/home/administrator/desktop/mimic/telepost/backend
+Environment=PATH=/home/administrator/desktop/mimic/telepost/backend/venv/bin
+ExecStart=/home/administrator/desktop/mimic/telepost/backend/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 dicom_transfer.wsgi:application
 Restart=always
 RestartSec=3
 
@@ -153,7 +153,7 @@ EOF
 
 # Frontend setup
 print_status "Setting up React frontend..."
-cd /home/administrator/desktop/telepost/frontend
+cd /home/administrator/desktop/mimic/telepost/frontend
 
 # Install Node.js dependencies
 npm install
@@ -209,12 +209,12 @@ server {
 
     # Static files
     location /static/ {
-        alias /home/administrator/desktop/telepost/backend/staticfiles/;
+        alias /home/administrator/desktop/mimic/telepost/backend/staticfiles/;
     }
 
     # Media files
     location /media/ {
-        alias /home/administrator/desktop/telepost/backend/media/;
+        alias /home/administrator/desktop/mimic/telepost/backend/media/;
     }
 }
 EOF
@@ -227,7 +227,7 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t
 
 # Set proper permissions
-chown -R www-data:www-data /home/administrator/desktop/telepost
+chown -R www-data:www-data /home/administrator/desktop/mimic/telepost
 chown -R www-data:www-data /var/www/html
 
 # Start services
@@ -238,8 +238,8 @@ systemctl start telepost-backend
 systemctl restart nginx
 
 # Create logs directory
-mkdir -p /home/administrator/desktop/telepost/logs
-chown www-data:www-data /home/administrator/desktop/telepost/logs
+mkdir -p /home/administrator/desktop/mimic/telepost/logs
+chown www-data:www-data /home/administrator/desktop/mimic/telepost/logs
 
 # Final status check
 print_status "Checking service status..."
@@ -254,8 +254,8 @@ echo "👤 Login credentials:"
 echo "   Username: admin"
 echo "   Password: admin123"
 echo ""
-echo "📁 Application files: /home/administrator/desktop/telepost"
-echo "📋 Logs: /home/administrator/desktop/telepost/logs"
+echo "📁 Application files: /home/administrator/desktop/mimic/telepost"
+echo "📋 Logs: /home/administrator/desktop/mimic/telepost/logs"
 echo ""
 echo "🔧 Useful commands:"
 echo "   sudo systemctl status telepost-backend"
@@ -264,7 +264,7 @@ echo "   sudo systemctl status nginx"
 echo "   sudo journalctl -u telepost-backend -f"
 echo ""
 echo "⚠️  Remember to:"
-echo "   1. Change the SECRET_KEY in /home/administrator/desktop/telepost/backend/.env"
+echo "   1. Change the SECRET_KEY in /home/administrator/desktop/mimic/telepost/backend/.env"
 echo "   2. ALLOWED_HOSTS already configured for 10.200.20.37"
 echo "   3. Change default passwords"
 echo "   4. Configure firewall if needed" 
