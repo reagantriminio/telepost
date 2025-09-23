@@ -155,73 +155,89 @@ class DICOMTransferService:
     def transfer_series(self, log_id: int, file_paths: List[str], destination) -> bool:
         """
         Transfer a series of DICOM files to a destination.
-        
+
         Args:
             log_id: TransferLog ID for tracking
             file_paths: List of DICOM file paths
             destination: Destination model instance
-            
+
         Returns:
             True if transfer successful, False otherwise
         """
         from .models import TransferLog
-        
+
+        # Initialize file lists outside try block for cleanup
+        valid_files = []
+        converted_files = []
+        timeout_seconds = 300  # Default timeout
+
         try:
             # Get transfer log
-            transfer_log = TransferLog.objects.get(id=log_id)  # type: ignore   
+            transfer_log = TransferLog.objects.get(id=log_id)  # type: ignore
             transfer_log.status = 'sending'
             transfer_log.save()
-            
-            # Validate files exist
-            valid_files = []
+
+            # Validate files exist and convert to compatible transfer syntax
+
             for file_path in file_paths:
                 if os.path.exists(file_path):
-                    valid_files.append(file_path)
+                    # Convert to Little Endian Explicit if needed
+                    converted_path = self._convert_transfer_syntax(file_path)
+                    if converted_path:
+                        valid_files.append(file_path)
+                        converted_files.append(converted_path)
+                    else:
+                        logger.warning(f"Failed to convert transfer syntax: {file_path}")
                 else:
                     logger.warning(f"File not found: {file_path}")
-            
-            if not valid_files:
+
+            if not converted_files:
                 transfer_log.mark_completed(
                     'failed',
-                    error_message="No valid files found for transfer"
+                    error_message="No valid files found for transfer or conversion failed"
                 )
                 return False
             
-            # Prepare storescu command
+            # Prepare storescu command with comprehensive transfer syntax support
             cmd = [
                 self.storescu_path,
                 '-aet', 'TELEPOST',
                 '-aec', destination.ae_title,
-                '--propose-jpeg8',         # <- propose JPEG Baseline
+                '--propose-uncompr',       # Propose uncompressed transfer syntax
+                '--propose-little',        # Propose Little Endian Explicit
+                '--propose-implicit',      # Propose Little Endian Implicit
+                '--convert-to-explicit',   # Convert to explicit VR if needed
+                '--timeout', '60',         # Increase timeout for large series
                 destination.host,
                 str(destination.port),
             ]
+
+            # Add converted files to command
+            cmd.extend(converted_files)
             
-            # Add all files to command
-            cmd.extend(valid_files)
-            
-            logger.info(f"Starting DICOM transfer: {' '.join(cmd[:8])}... ({len(valid_files)} files)")
-            
-            # Execute storescu
+            logger.info(f"Starting DICOM transfer: {' '.join(cmd[:8])}... ({len(converted_files)} files)")
+
+            # Execute storescu with longer timeout for large series
+            timeout_seconds = max(300, len(converted_files) * 2)  # At least 5 min, or 2 sec per file
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=timeout_seconds
             )
-            
-            total_size = sum(os.path.getsize(fp) for fp in valid_files if os.path.exists(fp))
+
+            total_size = sum(os.path.getsize(fp) for fp in converted_files if os.path.exists(fp))
 
             if result.returncode == 0:
                 # Success
                 transfer_log.bytes_transferred = total_size
                 transfer_log.mark_completed(
                     'success',
-                    files_transferred=len(valid_files),
+                    files_transferred=len(converted_files),
                     bytes_transferred=total_size,
                     storescu_output=result.stdout
                 )
-                logger.info(f"Transfer completed successfully: {len(valid_files)} files")
+                logger.info(f"Transfer completed successfully: {len(converted_files)} files")
                 return True
             else:
                 # Failure
@@ -236,7 +252,7 @@ class DICOMTransferService:
                 return False
                 
         except subprocess.TimeoutExpired:
-            error_msg = "Transfer timed out after 5 minutes"
+            error_msg = f"Transfer timed out after {timeout_seconds} seconds"
             transfer_log.mark_completed('failed', error_message=error_msg)
             logger.error(error_msg)
             return False
@@ -248,8 +264,8 @@ class DICOMTransferService:
             return False
         
         finally:
-            # Clean up temporary files
-            self._cleanup_files(file_paths)
+            # Clean up temporary files (both original and converted)
+            self._cleanup_files(file_paths + converted_files)
     
     def _cleanup_files(self, file_paths: List[str]):
         """
@@ -266,7 +282,59 @@ class DICOMTransferService:
                         break  # Only need to remove once per session
             except Exception as e:
                 logger.warning(f"Failed to cleanup file {file_path}: {str(e)}")
-    
+
+    def _convert_transfer_syntax(self, file_path: str) -> Optional[str]:
+        """
+        Convert DICOM file to Little Endian Explicit transfer syntax if needed.
+
+        Args:
+            file_path: Path to original DICOM file
+
+        Returns:
+            Path to converted file or original file if no conversion needed
+        """
+        try:
+            # Configure pydicom to handle malformed data gracefully
+            import pydicom.config
+            original_setting = pydicom.config.convert_wrong_length_to_UN
+            pydicom.config.convert_wrong_length_to_UN = True
+
+            try:
+                # Read original file with error handling
+                ds = pydicom.dcmread(file_path, force=True)
+
+                # Check if already in Little Endian Explicit
+                if hasattr(ds, 'file_meta') and hasattr(ds.file_meta, 'TransferSyntaxUID'):
+                    current_syntax = str(ds.file_meta.TransferSyntaxUID)
+                    # Little Endian Explicit UID
+                    if current_syntax == '1.2.840.10008.1.2.1':
+                        return file_path  # No conversion needed
+
+                # Convert to Little Endian Explicit
+                ds.file_meta.TransferSyntaxUID = '1.2.840.10008.1.2.1'
+                ds.is_little_endian = True
+                ds.is_implicit_VR = False
+
+                # Create converted file path
+                base_dir = os.path.dirname(file_path)
+                base_name = os.path.basename(file_path)
+                converted_path = os.path.join(base_dir, f"converted_{base_name}")
+
+                # Save converted file with error handling
+                ds.save_as(converted_path, write_like_original=False)
+
+                logger.info(f"Converted DICOM transfer syntax: {file_path} -> {converted_path}")
+                return converted_path
+
+            finally:
+                # Restore original pydicom setting
+                pydicom.config.convert_wrong_length_to_UN = original_setting
+
+        except Exception as e:
+            logger.error(f"Failed to convert transfer syntax for {file_path}: {str(e)}")
+            # Return original file as fallback - let storescu handle it
+            return file_path
+
     def test_destination(self, destination) -> Dict[str, Any]:
         """
         Test connectivity to a DICOM destination using C-ECHO.

@@ -1,5 +1,3 @@
-dcversion: '3.8'
-
 services:
   # PostgreSQL Database
   database:
@@ -19,6 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   # Django Backend
@@ -32,7 +31,7 @@ services:
       - DATABASE_URL=postgresql://telepost_user:telepost_password@database:5432/telepost_db
       - SECRET_KEY=your-secret-key-change-in-production
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend
-      - CORS_ALLOWED_ORIGINS=http://localhost:4000,http://127.0.0.1:4000,http://localhost:80
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1,http://localhost:80,http://127.0.0.1:80,http://localhost:4000,http://127.0.0.1:4000
       - STORESCU_PATH=/usr/bin/storescu
       - ECHOSCU_PATH=/usr/bin/echoscu
     volumes:
@@ -48,6 +47,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
     restart: unless-stopped
     command: >
       sh -c "python manage.py migrate &&
@@ -70,6 +70,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
     restart: unless-stopped
 
 volumes:

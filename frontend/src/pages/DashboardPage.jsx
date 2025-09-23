@@ -49,6 +49,16 @@ function DashboardPage({ user, onLogout }) {
     return () => { mounted = false; clearInterval(iv) }
   }, [])
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+    }
+  }, [])
+
   const handleFilesImported = (importedPatients) => {
     setPatients(importedPatients)
   }
@@ -123,7 +133,7 @@ function DashboardPage({ user, onLogout }) {
           } catch (e) {
             console.error('Status poll failed', e)
           }
-        }, 3000)
+        }, 10000)
       }
     } catch (e) {
       console.error('Send failed', e)
