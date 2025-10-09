@@ -59,6 +59,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://10.200.20.130:8000/api
     container_name: telepost_frontend
     ports:
       - "80:80"
