@@ -38,7 +38,7 @@ services:
       - backend_media:/app/media
       - backend_static:/app/staticfiles
     ports:
-      - "8000:8000"
+      - "8080:8000"
     depends_on:
       database:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://10.200.20.105:8000/api
+        - VITE_API_URL=http://10.200.20.105:8080/api
     container_name: telepost_frontend
     ports:
       - "80:80"
