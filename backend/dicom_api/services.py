@@ -206,7 +206,6 @@ class DICOMTransferService:
                 '--propose-uncompr',       # Propose uncompressed transfer syntax
                 '--propose-little',        # Propose Little Endian Explicit
                 '--propose-implicit',      # Propose Little Endian Implicit
-                '--convert-to-explicit',   # Convert to explicit VR if needed
                 '--timeout', '60',         # Increase timeout for large series
                 destination.host,
                 str(destination.port),
