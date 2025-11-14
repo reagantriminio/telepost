@@ -1,8 +1,8 @@
 // Simple fetch wrapper with JWT authentication and automatic refresh
 // Assumes backend API is served from /api/ (adjust BASE_URL as needed)
 
-// Use Vite env var if provided, else default to backend on port 8000
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+// Use Vite env var if provided, else default to VM backend
+const BASE_URL = import.meta.env.VITE_API_URL || "http://10.200.20.105:8080/api";
 
 let accessToken = localStorage.getItem("access") || "";
 let refreshToken = localStorage.getItem("refresh") || "";
