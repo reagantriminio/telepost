@@ -11,9 +11,9 @@ ENV VITE_API_URL=${VITE_API_URL}
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
-# copy source and build
+# copy source and build (force cache bust)
 COPY . .
-RUN npm run build
+RUN npm run build --force
 
 # ---- production stage ----
 FROM nginx:alpine

@@ -1,11 +1,12 @@
 // Simple fetch wrapper with JWT authentication and automatic refresh
 // Assumes backend API is served from /api/ (adjust BASE_URL as needed)
 
-// Force VM backend URL
+// Force VM backend URL - Updated v2
 const BASE_URL = "http://10.200.20.105:8080/api";
 
 // Debug: log the API URL being used
-console.log("Frontend API URL:", BASE_URL);
+console.log("Frontend API URL (v2):", BASE_URL);
+console.log("Build timestamp:", Date.now());
 
 let accessToken = localStorage.getItem("access") || "";
 let refreshToken = localStorage.getItem("refresh") || "";
