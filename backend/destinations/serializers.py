@@ -5,7 +5,7 @@ class DestinationSerializer(serializers.ModelSerializer):
     """
     Serializer for Destination model.
     """
-    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    created_by_username = serializers.SerializerMethodField()
     is_reachable = serializers.SerializerMethodField()
     
     class Meta:
@@ -17,6 +17,13 @@ class DestinationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
     
+    def get_created_by_username(self, obj):
+        """
+        Get the username of the user who created this destination.
+        Returns None if created_by is not set.
+        """
+        return obj.created_by.username if obj.created_by else None
+
     def get_is_reachable(self, obj):
         """
         Check if destination is reachable.

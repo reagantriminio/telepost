@@ -7,7 +7,7 @@ class TransferLogSerializer(serializers.ModelSerializer):
     Serializer for TransferLog model.
     """
     username = serializers.CharField(source='user.username', read_only=True)
-    destination_name = serializers.CharField(source='destination.name', read_only=True)
+    destination_name = serializers.SerializerMethodField()
     action_display = serializers.CharField(source='get_action_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     duration = serializers.SerializerMethodField()
@@ -24,6 +24,13 @@ class TransferLogSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'timestamp', 'user']
     
+    def get_destination_name(self, obj):
+        """
+        Get the name of the destination.
+        Returns None if destination is not set.
+        """
+        return obj.destination.name if obj.destination else None
+
     def get_duration(self, obj):
         """Get the duration of the operation in seconds."""
         duration = obj.get_duration()
@@ -36,17 +43,24 @@ class TransferLogListSerializer(serializers.ModelSerializer):
     Lightweight serializer for listing transfer logs.
     """
     username = serializers.CharField(source='user.username', read_only=True)
-    destination_name = serializers.CharField(source='destination.name', read_only=True)
+    destination_name = serializers.SerializerMethodField()
     action_display = serializers.CharField(source='get_action_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
         model = TransferLog
         fields = [
-            'id', 'username', 'action_display', 'timestamp', 
-            'status', 'status_display', 'patient_name', 
+            'id', 'username', 'action_display', 'timestamp',
+            'status', 'status_display', 'patient_name',
             'series_description', 'bytes_transferred', 'destination_name', 'error_message'
         ]
+
+    def get_destination_name(self, obj):
+        """
+        Get the name of the destination.
+        Returns None if destination is not set.
+        """
+        return obj.destination.name if obj.destination else None
 
 class DICOMImportResponseSerializer(serializers.Serializer):
     """
