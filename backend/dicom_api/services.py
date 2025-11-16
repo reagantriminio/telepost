@@ -269,16 +269,17 @@ class DICOMTransferService:
     def _cleanup_files(self, file_paths: List[str]):
         """
         Clean up temporary DICOM files after transfer.
+        Only removes individual converted files, not the entire temp directory,
+        to avoid interfering with concurrent transfers.
         """
         for file_path in file_paths:
             try:
                 if os.path.exists(file_path):
-                    # Get the temporary directory (should be the parent directory)
-                    temp_dir = os.path.dirname(file_path)
-                    if 'dicom_import_' in temp_dir:
-                        # Remove the entire temp directory
-                        shutil.rmtree(temp_dir, ignore_errors=True)
-                        break  # Only need to remove once per session
+                    # Only delete converted files (prefixed with "converted_")
+                    # Don't delete original files or the entire directory
+                    if os.path.basename(file_path).startswith("converted_"):
+                        os.remove(file_path)
+                        logger.debug(f"Cleaned up converted file: {file_path}")
             except Exception as e:
                 logger.warning(f"Failed to cleanup file {file_path}: {str(e)}")
 
