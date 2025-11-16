@@ -176,13 +176,96 @@ export const api = {
     return res.json()
   },
 
-  importDicom: async (formData) => {
-    const res = await fetchWithAuth("/dicom/import/", {
-      method: "POST",
-      body: formData,
+  importDicom: async (formData, onProgress) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        console.log('Creating XMLHttpRequest for upload...');
+        const xhr = new XMLHttpRequest();
+
+        // Track upload progress
+        if (onProgress) {
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = (e.loaded / e.total) * 100;
+              onProgress(percentComplete);
+            }
+          });
+        }
+
+        xhr.upload.addEventListener('loadstart', () => {
+          console.log('Upload started');
+        });
+
+        // Handle completion
+        xhr.addEventListener('load', () => {
+          console.log('Upload load event, status:', xhr.status);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              resolve(data);
+            } catch (e) {
+              reject(new Error('Failed to parse response'));
+            }
+          } else if (xhr.status === 401 && refreshToken) {
+            // Handle token refresh and retry
+            fetch(`${BASE_URL}/auth/refresh/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refresh: refreshToken }),
+            })
+            .then(async (refreshResp) => {
+              if (refreshResp.ok) {
+                const data = await refreshResp.json();
+                setTokens({ access: data.access });
+                // Retry the upload with new token
+                api.importDicom(formData, onProgress).then(resolve).catch(reject);
+              } else {
+                clearTokens();
+                reject(new Error('Authentication failed'));
+              }
+            })
+            .catch(() => {
+              clearTokens();
+              reject(new Error('Authentication failed'));
+            });
+          } else {
+            try {
+              const error = JSON.parse(xhr.responseText);
+              reject(error);
+            } catch (e) {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          }
+        });
+
+        // Handle errors
+        xhr.addEventListener('error', (e) => {
+          console.error('XHR error event:', e);
+          reject(new Error('Network error during upload'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          console.log('Upload aborted');
+          reject(new Error('Upload cancelled'));
+        });
+
+        // Open and send request
+        const uploadUrl = `${BASE_URL}/dicom/import/`;
+        console.log('Opening XHR connection to:', uploadUrl);
+        xhr.open('POST', uploadUrl);
+
+        // Set auth header
+        if (accessToken) {
+          console.log('Setting Authorization header');
+          xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+        }
+
+        console.log('Sending FormData...');
+        xhr.send(formData);
+      } catch (error) {
+        reject(error);
+      }
     });
-    if (!res.ok) throw await res.json();
-    return res.json();
   },
 
   sendSeries: async (payload) => {

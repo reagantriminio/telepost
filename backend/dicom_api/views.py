@@ -135,10 +135,15 @@ def send_dicom_series(request):
         
         # Initialize transfer service
         transfer_service = DICOMTransferService()
-        
+
+        # Generate a unique batch ID for this group of transfers
+        import uuid
+        from django.utils import timezone
+        batch_id = f"batch_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+
         # Create transfer logs and initiate transfers
         transfer_tasks = []
-        
+
         for series_transfer in series_to_send:
             series_id = series_transfer.get('seriesId')
             destination_id = series_transfer.get('destination')
@@ -175,6 +180,7 @@ def send_dicom_series(request):
                     action='send',
                     status='pending',
                     destination=destination,
+                    batch_id=batch_id,
                     patient_name=first_file_metadata.get('patient_name', ''),
                     patient_id=first_file_metadata.get('patient_id', ''),
                     study_instance_uid=first_file_metadata.get('study_instance_uid', ''),

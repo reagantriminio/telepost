@@ -15,11 +15,12 @@ class TransferLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransferLog
         fields = [
-            'id', 'user', 'username', 'action', 'action_display', 
+            'id', 'user', 'username', 'action', 'action_display',
             'timestamp', 'completed_at', 'status', 'status_display',
-            'patient_name', 'patient_id', 'study_instance_uid', 
+            'patient_name', 'patient_id', 'study_instance_uid',
             'series_instance_uid', 'series_description', 'modality',
             'instance_count', 'bytes_transferred', 'destination', 'destination_name',
+            'batch_id', 'files_succeeded', 'files_failed',
             'error_message', 'details', 'duration'
         ]
         read_only_fields = ['id', 'timestamp', 'user']
@@ -52,7 +53,8 @@ class TransferLogListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'action_display', 'timestamp',
             'status', 'status_display', 'patient_name',
-            'series_description', 'bytes_transferred', 'destination_name', 'error_message'
+            'series_description', 'bytes_transferred', 'destination_name',
+            'batch_id', 'files_succeeded', 'files_failed', 'error_message'
         ]
 
     def get_destination_name(self, obj):

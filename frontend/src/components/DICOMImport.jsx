@@ -35,6 +35,10 @@ function DICOMImport({ onFilesImported }) {
   }
 
   const handleFiles = async (files) => {
+    console.log(`Starting upload of ${files.length} files`)
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0)
+    console.log(`Total size: ${(totalSize / (1024 * 1024 * 1024)).toFixed(2)} GB`)
+
     setIsUploading(true)
     setUploadProgress(0)
 
@@ -42,9 +46,15 @@ function DICOMImport({ onFilesImported }) {
       // Build FormData
       const formData = new FormData()
       files.forEach(f => formData.append('files', f))
+      console.log('FormData built, starting upload...')
 
-      // Upload to backend
-      const res = await api.importDicom(formData)
+      // Upload to backend with progress tracking
+      const res = await api.importDicom(formData, (progress) => {
+        console.log(`Upload progress: ${progress.toFixed(1)}%`)
+        setUploadProgress(Math.round(progress))
+      })
+
+      console.log('Upload complete, processing response...')
 
       // Backend returns patients
       const patients = res.patients.map(p => ({
@@ -55,6 +65,7 @@ function DICOMImport({ onFilesImported }) {
       onFilesImported(patients)
     } catch (error) {
       console.error('Error processing files:', error)
+      alert(`Upload failed: ${error.message || JSON.stringify(error)}`)
     } finally {
       setIsUploading(false)
       setUploadProgress(0)
@@ -94,14 +105,27 @@ function DICOMImport({ onFilesImported }) {
               </svg>
             </div>
             <div className="text-white">
-              <div className="text-sm mb-2">Processing files...</div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              <div className="text-sm mb-2">
+                {uploadProgress < 100 ? 'Uploading files...' : 'Processing DICOM files...'}
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-3">
+                <div
+                  className="bg-blue-600 h-3 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
-              <div className="text-xs text-gray-400 mt-1">{uploadProgress}%</div>
+              <div className="text-xs text-gray-400 mt-2">
+                {uploadProgress < 100 ? (
+                  <span>{uploadProgress}% uploaded</span>
+                ) : (
+                  <span>Upload complete, parsing metadata...</span>
+                )}
+              </div>
+              {uploadProgress < 100 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Please keep this window open
+                </div>
+              )}
             </div>
           </div>
         ) : (

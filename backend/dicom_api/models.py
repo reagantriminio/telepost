@@ -93,9 +93,28 @@ class TransferLog(models.Model):
         help_text="Total bytes sent for this transfer (successful sends)"
     )
 
+    # Batch tracking - multiple series sent together get the same batch_id
+    batch_id = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Unique identifier for grouping transfers initiated together"
+    )
+
+    # File-level success/failure tracking
+    files_succeeded = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of files successfully transferred"
+    )
+    files_failed = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of files that failed to transfer"
+    )
+
     # Explicit manager annotation for static type checkers (e.g., mypy)
     objects: models.Manager = models.Manager()
-    
+
     # Transfer-specific fields
     destination = models.ForeignKey(
         Destination,

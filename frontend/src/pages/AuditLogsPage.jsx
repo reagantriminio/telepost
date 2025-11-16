@@ -44,10 +44,13 @@ function AuditLogsPage() {
           <thead className="bg-gray-700">
             <tr>
               <th className="py-2 px-3 text-left">Timestamp</th>
+              <th className="py-2 px-3 text-left">Batch</th>
               <th className="py-2 px-3 text-left">Action</th>
               <th className="py-2 px-3 text-left">Status</th>
               <th className="py-2 px-3 text-left">Destination</th>
               <th className="py-2 px-3 text-left">Patient/Series</th>
+              <th className="py-2 px-3 text-left">Files Succeeded</th>
+              <th className="py-2 px-3 text-left">Files Failed</th>
               <th className="py-2 px-3 text-left">Message</th>
             </tr>
           </thead>
@@ -55,15 +58,37 @@ function AuditLogsPage() {
             {logs.map(l => (
               <tr key={l.id} className="border-t border-gray-700 hover:bg-gray-700/40">
                 <td className="py-2 px-3">{new Date(l.timestamp).toLocaleString()}</td>
+                <td className="py-2 px-3 text-xs font-mono">
+                  {l.batch_id ? l.batch_id.split('_').slice(-1)[0] : '-'}
+                </td>
                 <td className="py-2 px-3">{l.action}</td>
-                <td className="py-2 px-3">{l.status}</td>
-                <td className="py-2 px-3">{l.destination_name}</td>
-                <td className="py-2 px-3">{l.patient_name || l.series_description}</td>
+                <td className="py-2 px-3">
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    l.status === 'success' ? 'bg-green-600/20 text-green-400' :
+                    l.status === 'failed' ? 'bg-red-600/20 text-red-400' :
+                    l.status === 'sending' ? 'bg-blue-600/20 text-blue-400' :
+                    'bg-gray-600/20 text-gray-400'
+                  }`}>
+                    {l.status}
+                  </span>
+                </td>
+                <td className="py-2 px-3">{l.destination_name || '-'}</td>
+                <td className="py-2 px-3">{l.patient_name || l.series_description || '-'}</td>
+                <td className="py-2 px-3 text-center">
+                  <span className={l.files_succeeded > 0 ? 'text-green-400 font-semibold' : 'text-gray-500'}>
+                    {l.files_succeeded || 0}
+                  </span>
+                </td>
+                <td className="py-2 px-3 text-center">
+                  <span className={l.files_failed > 0 ? 'text-red-400 font-semibold' : 'text-gray-500'}>
+                    {l.files_failed || 0}
+                  </span>
+                </td>
                 <td className="py-2 px-3 text-xs max-w-xs truncate" title={l.error_message}>{l.error_message}</td>
               </tr>
             ))}
             {logs.length === 0 && !loading && (
-              <tr><td className="p-4 text-center text-gray-400" colSpan={5}>No logs</td></tr>
+              <tr><td className="p-4 text-center text-gray-400" colSpan={9}>No logs</td></tr>
             )}
           </tbody>
         </table>

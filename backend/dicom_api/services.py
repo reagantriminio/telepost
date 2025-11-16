@@ -169,6 +169,7 @@ class DICOMTransferService:
         # Initialize file lists outside try block for cleanup
         valid_files = []
         converted_files = []
+        failed_conversions = []
         timeout_seconds = 300  # Default timeout
 
         try:
@@ -178,7 +179,6 @@ class DICOMTransferService:
             transfer_log.save()
 
             # Validate files exist and convert to compatible transfer syntax
-
             for file_path in file_paths:
                 if os.path.exists(file_path):
                     # Convert to Little Endian Explicit if needed
@@ -188,13 +188,19 @@ class DICOMTransferService:
                         converted_files.append(converted_path)
                     else:
                         logger.warning(f"Failed to convert transfer syntax: {file_path}")
+                        failed_conversions.append(os.path.basename(file_path))
                 else:
                     logger.warning(f"File not found: {file_path}")
+                    failed_conversions.append(os.path.basename(file_path))
+
+            # Track failed files
+            transfer_log.files_failed = len(failed_conversions)
 
             if not converted_files:
                 transfer_log.mark_completed(
                     'failed',
-                    error_message="No valid files found for transfer or conversion failed"
+                    error_message="No valid files found for transfer or conversion failed",
+                    failed_files=failed_conversions
                 )
                 return False
             
@@ -228,37 +234,52 @@ class DICOMTransferService:
             total_size = sum(os.path.getsize(fp) for fp in converted_files if os.path.exists(fp))
 
             if result.returncode == 0:
-                # Success
+                # Success - all files transferred
                 transfer_log.bytes_transferred = total_size
+                transfer_log.files_succeeded = len(converted_files)
                 transfer_log.mark_completed(
                     'success',
                     files_transferred=len(converted_files),
                     bytes_transferred=total_size,
-                    storescu_output=result.stdout
+                    storescu_output=result.stdout,
+                    succeeded_files=[os.path.basename(fp) for fp in valid_files],
+                    failed_files=failed_conversions
                 )
                 logger.info(f"Transfer completed successfully: {len(converted_files)} files")
                 return True
             else:
-                # Failure
+                # Failure - mark all attempted files as failed
                 error_msg = result.stderr or "Unknown storescu error"
+                transfer_log.files_failed += len(converted_files)
                 transfer_log.mark_completed(
                     'failed',
                     error_message=error_msg,
                     storescu_output=result.stdout,
-                    storescu_error=result.stderr
+                    storescu_error=result.stderr,
+                    failed_files=failed_conversions + [os.path.basename(fp) for fp in valid_files]
                 )
                 logger.error(f"Transfer failed: {error_msg}")
                 return False
                 
         except subprocess.TimeoutExpired:
             error_msg = f"Transfer timed out after {timeout_seconds} seconds"
-            transfer_log.mark_completed('failed', error_message=error_msg)
+            transfer_log.files_failed += len(converted_files)
+            transfer_log.mark_completed(
+                'failed',
+                error_message=error_msg,
+                failed_files=failed_conversions + [os.path.basename(fp) for fp in valid_files]
+            )
             logger.error(error_msg)
             return False
-            
+
         except Exception as e:
             error_msg = f"Transfer error: {str(e)}"
-            transfer_log.mark_completed('failed', error_message=error_msg)
+            transfer_log.files_failed += len(converted_files)
+            transfer_log.mark_completed(
+                'failed',
+                error_message=error_msg,
+                failed_files=failed_conversions + [os.path.basename(fp) for fp in valid_files]
+            )
             logger.error(error_msg)
             return False
         
